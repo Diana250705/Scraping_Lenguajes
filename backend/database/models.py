@@ -1,8 +1,11 @@
 import psycopg2
 import json
+import os
+from dotenv import load_dotenv
 
-DATABASE_URL = "postgresql://postgres.qmjzxwgpowsfudonfjzw:bajarleyoNA37!@aws-1-us-west-2.pooler.supabase.com:6543/postgres"
+load_dotenv()
 
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 def get_connection():
     return psycopg2.connect(DATABASE_URL)
