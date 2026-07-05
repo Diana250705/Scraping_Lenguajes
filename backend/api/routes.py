@@ -6,16 +6,19 @@ from backend.scraper.engine import run_all
 from backend.analyzer.scorer import score_jobs
 from backend.database.models import create_table, save_jobs, get_all_jobs
 
+# Definición del enrutador de FastAPI para el prefijo /api
 router = APIRouter(prefix="/api")
 
+# Caché en memoria para guardar las búsquedas temporalmente
 _cache: dict = {}
 
+# Modelo para los parámetros de búsqueda de empleo
 class SearchRequest(BaseModel):
     query: str
     location: str = "Lima"
     max_pages: int = 2
 
-
+# Modelo para el perfil profesional del usuario (usado en el scoring)
 class UserProfile(BaseModel):
     title: str
     salary_min: Optional[int] = None
@@ -26,15 +29,18 @@ class UserProfile(BaseModel):
     keywords: list[str] = []
 
 
+# Modelo que agrupa la búsqueda y el perfil del usuario
 class ScrapeRequest(BaseModel):
     search: SearchRequest
     profile: UserProfile
 
 
+# Endpoint para buscar y clasificar ofertas de empleo
 @router.post("/scrape")
 async def scrape_jobs(req: ScrapeRequest):
     cache_key = f"{req.search.query}_{req.search.location}_{req.search.max_pages}"
 
+    # Recupera del caché o ejecuta los scrapers correspondientes
     if cache_key in _cache:
         jobs = _cache[cache_key]
     else:
@@ -48,6 +54,7 @@ async def scrape_jobs(req: ScrapeRequest):
     if not jobs:
         return {"jobs": [], "total": 0, "message": "Sin resultados"}
 
+    # Evalúa y ordena los empleos según el perfil del usuario
     ranked = score_jobs(jobs, req.profile.model_dump())
 
     return {
@@ -57,6 +64,7 @@ async def scrape_jobs(req: ScrapeRequest):
     }
 
 
+# Endpoint para obtener todos los empleos en el caché actual
 @router.get("/jobs")
 async def get_cached_jobs():
     all_jobs = []
@@ -65,6 +73,7 @@ async def get_cached_jobs():
     return {"jobs": all_jobs, "total": len(all_jobs)}
 
 
+# Endpoint para obtener todas las ofertas guardadas en la base de datos
 @router.get("/jobs/saved")
 async def get_saved_jobs():
     """Retorna todas las ofertas guardadas."""
@@ -72,6 +81,7 @@ async def get_saved_jobs():
     return {"jobs": jobs, "total": len(jobs)}
 
 
+# Endpoint para comparar ofertas específicas por sus IDs
 @router.post("/compare")
 async def compare_jobs(job_ids: list[str]):
     all_jobs = []
@@ -82,6 +92,8 @@ async def compare_jobs(job_ids: list[str]):
         raise HTTPException(404, "No se encontraron las ofertas indicadas")
     return {"jobs": selected}
 
+
+# Endpoint para guardar los resultados del caché en la base de datos
 @router.post("/export")
 async def export_jobs(req: ScrapeRequest):
     """Crea la tabla si no existe y guarda los jobs del cache."""
@@ -103,6 +115,9 @@ async def export_jobs(req: ScrapeRequest):
     save_jobs(ranked, req.search.query)
 
     return {"message": f"{len(ranked)} ofertas exportadas"}
+
+
+# Endpoint para limpiar la memoria caché
 @router.delete("/cache")
 async def clear_cache():
     _cache.clear()

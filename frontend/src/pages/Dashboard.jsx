@@ -17,7 +17,10 @@ const DEFAULT_PROFILE = {
 };
 
 export function Dashboard() {
+    // Hook personalizado con la lógica de ofertas
     const { jobs, loading, error, meta, selected, search, toggleSelect, getComparison, filterJobs } = useJobs();
+
+    // Estados locales para búsqueda, filtros, comparación y exportación
     const [query, setQuery] = useState("");
     const [profile, setProfile] = useState(DEFAULT_PROFILE);
     const [filters, setFilters] = useState({ minScore: 0 });
@@ -27,12 +30,14 @@ export function Dashboard() {
     const [exportMessage, setExportMessage] = useState("");
     const [exporting, setExporting] = useState(false);
 
+    // Dispara el scraping y scoring llamando a la función de búsqueda del hook
     const handleSearch = (e) => {
         e.preventDefault();
         if (!query.trim()) return;
         search({ query, location: profile.location, max_pages: 2 }, profile);
     };
 
+    // Obtiene las ofertas seleccionadas para comparación y abre el modal
     const handleCompare = async () => {
         if (selected.length < 2) return alert("Selecciona al menos 2 ofertas para comparar");
         const data = await getComparison();
@@ -40,6 +45,7 @@ export function Dashboard() {
         setComparing(true);
     };
 
+    // Envía la solicitud al endpoint /export del backend para guardar las ofertas obtenidas
     const handleExport = async () => {
         if (jobs.length === 0) return alert("Haz una búsqueda primero");
         setExporting(true);
@@ -57,6 +63,7 @@ export function Dashboard() {
         }
     };
 
+    // Genera un archivo SQL con las ofertas y lo descarga
     const handleDownloadSQL = () => {
         const escapeSql = (str) => {
             if (str === null || str === undefined) return "NULL";
@@ -115,6 +122,7 @@ export function Dashboard() {
             sqlContent += `    score_breakdown = EXCLUDED.score_breakdown;\n`;
         }
 
+        // Descarga el archivo SQL mediante un elemento temporal 'a'
         const blob = new Blob([sqlContent], { type: "text/plain;charset=utf-8;" });
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
@@ -126,19 +134,21 @@ export function Dashboard() {
         document.body.removeChild(link);
     };
 
+    // Genera un archivo Excel con diseño CSS y lo descarga
     const handleExportExcel = () => {
         const sortedJobs = [...filteredJobs].sort((a, b) => b.score - a.score);
 
+        // Diseña las filas HTML asignando colores al score según el rango obtenido
         const buildRow = (job) => {
             const minSal = job.salary?.min !== null && job.salary?.min !== undefined ? `S/ ${job.salary.min.toLocaleString('es-PE')}` : "No especificado";
             const maxSal = job.salary?.max !== null && job.salary?.max !== undefined ? `S/ ${job.salary.max.toLocaleString('es-PE')}` : "No especificado";
-            
-            // Score styling
-            let scoreStyle = "background-color: #fee2e2; color: #991b1b; font-weight: bold; text-align: center;"; // Red (<50)
+
+            // Estilos CSS inline para la celda del score
+            let scoreStyle = "background-color: #fee2e2; color: #991b1b; font-weight: bold; text-align: center;"; // Rojo (<50)
             if (job.score >= 80) {
-                scoreStyle = "background-color: #d1fae5; color: #065f46; font-weight: bold; text-align: center;"; // Green (>=80)
+                scoreStyle = "background-color: #d1fae5; color: #065f46; font-weight: bold; text-align: center;"; // Verde (>=80)
             } else if (job.score >= 50) {
-                scoreStyle = "background-color: #fef3c7; color: #92400e; font-weight: bold; text-align: center;"; // Orange (>=50)
+                scoreStyle = "background-color: #fef3c7; color: #92400e; font-weight: bold; text-align: center;"; // Naranja (>=50)
             }
 
             return `
@@ -158,6 +168,7 @@ export function Dashboard() {
 
         const rowsHtml = sortedJobs.map(buildRow).join("");
 
+        // Estructura XML/HTML interpretada por Excel
         const excelHtml = `
             <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
             <head>
@@ -204,6 +215,7 @@ export function Dashboard() {
             </html>
         `;
 
+        // Descarga del Excel mediante enlace temporal
         const blob = new Blob([excelHtml], { type: "application/vnd.ms-excel;charset=utf-8;" });
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
@@ -215,10 +227,12 @@ export function Dashboard() {
         document.body.removeChild(link);
     };
 
+    // Obtiene la lista final de empleos aplicando filtros
     const filteredJobs = filterJobs(filters);
 
     return (
         <div className="app-container">
+            {/* Cabecera principal con buscador general y selector de ubicación */}
             <header className="dashboard-header">
                 <div className="header-content">
                     <h1 className="header-title">JobScraper Perú</h1>

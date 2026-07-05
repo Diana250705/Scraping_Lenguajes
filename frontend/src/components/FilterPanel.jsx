@@ -1,11 +1,14 @@
 import { useState } from "react";
 
+// Componente del panel lateral que gestiona tanto el perfil del usuario como los filtros de resultados
 export function FilterPanel({ profile, onProfileChange, onFilterChange, sources = [] }) {
     const [scoreVal, setScoreVal] = useState(0);
+    // Función auxiliar para actualizar una clave específica en el objeto de perfil
     const update = (key, val) => onProfileChange((p) => ({ ...p, [key]: val }));
 
     return (
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            {/* --- SECCIÓN DE PERFIL PROFESIONAL (utilizado para el scoring en backend) --- */}
             <h2 className="panel-title">Mi perfil</h2>
 
             <label className="filter-label">Puesto buscado
@@ -41,6 +44,8 @@ export function FilterPanel({ profile, onProfileChange, onFilterChange, sources 
             </label>
 
             <hr className="filter-divider" />
+
+            {/* --- SECCIÓN DE FILTROS DE RESULTADOS (aplicados localmente en frontend) --- */}
             <h2 className="panel-title">Filtros</h2>
 
             <label className="filter-label">Score mínimo
@@ -51,12 +56,13 @@ export function FilterPanel({ profile, onProfileChange, onFilterChange, sources 
                         onChange={(e) => {
                             const val = Number(e.target.value);
                             setScoreVal(val);
-                            onFilterChange({ minScore: val });
+                            onFilterChange({ minScore: val }); // Filtrado por coincidencia mínima
                         }} />
                     <span className="range-value">{scoreVal}</span>
                 </div>
             </label>
 
+            {/* Selector dinámico de portales disponibles según las ofertas scrapeadas */}
             {sources.length > 0 && (
                 <label className="filter-label">Portal
                     <select className="filter-select"

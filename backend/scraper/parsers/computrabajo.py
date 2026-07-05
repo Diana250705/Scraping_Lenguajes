@@ -1,3 +1,5 @@
+# Realiza web scraping en el portal Computrabajo Perú
+
 import time
 import requests
 from bs4 import BeautifulSoup
@@ -5,6 +7,7 @@ from backend.config import BASE_URLS, HEADERS, REQUEST_TIMEOUT, DELAY_BETWEEN_RE
 from backend.scraper.cleaner import clean_text, normalize_salary, normalize_modality, normalize_experience
 
 
+# Realiza peticiones paginadas y devuelve la lista de ofertas obtenidas
 def scrape(query: str, location: str = "", max_pages: int = 3) -> list[dict]:
     jobs = []
     query_slug = query.replace(" ", "-").lower()
@@ -14,6 +17,7 @@ def scrape(query: str, location: str = "", max_pages: int = 3) -> list[dict]:
         params = {"p": page}
         
         try:
+            # Obtiene el HTML de la página de resultados
             response = requests.get(url, params=params, headers=HEADERS, timeout=REQUEST_TIMEOUT)
             response.raise_for_status()
         except requests.RequestException as e:
@@ -26,17 +30,20 @@ def scrape(query: str, location: str = "", max_pages: int = 3) -> list[dict]:
         if not cards:
             break
 
+        # Procesa cada contenedor (card) de oferta de trabajo
         for card in cards:
             job = parse_card(card)
             if job:
                 jobs.append(job)
 
+        # Espera un breve tiempo para no sobrecargar el servidor
         if page < max_pages:
             time.sleep(DELAY_BETWEEN_REQUESTS)
 
     return jobs
 
 
+# Extrae los datos detallados de un contenedor de oferta de Computrabajo
 def parse_card(card) -> dict | None:
     try:
         title_el = card.find("h2")
@@ -57,7 +64,7 @@ def parse_card(card) -> dict | None:
 
         raw_detail = clean_text(detail_el.get_text()) if detail_el else ""
 
-        # Extract salary and modality from spans
+        # Extrae información del salario y la modalidad de los elementos span
         raw_salary = ""
         raw_modality = ""
         for span in card.find_all("span", class_="dIB"):
@@ -71,13 +78,14 @@ def parse_card(card) -> dict | None:
         if title_el:
             title_link = title_el.find("a")
             title_text = title_link.get_text() if title_link else title_el.get_text()
-            # Clean up potential leakage of screen-reader texts or badges
+            # Limpia palabras residuales del título ("postulado", "vista")
             import re
             for badge in ["postulado", "vista"]:
                 title_text = re.sub(rf"\b{badge}\b", "", title_text, flags=re.IGNORECASE).strip()
-            # Remove any double spaces that might result from removal
+            # Remueve espacios
             title_text = re.sub(r"\s+", " ", title_text).strip()
 
+        # Retorna el diccionario con la información formateada y normalizada
         return {
             "id": f"computrabajo_{job_id}" if job_id else None,
             "source": "Computrabajo",

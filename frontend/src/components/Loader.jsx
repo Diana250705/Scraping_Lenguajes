@@ -1,3 +1,4 @@
+// Componente visual con animación de carga (spinner) y texto opcional
 export function Loader({ message = "Cargando..." }) {
     return (
         <div className="loader-container">

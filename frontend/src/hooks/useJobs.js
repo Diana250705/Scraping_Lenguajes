@@ -1,13 +1,16 @@
 import { useState, useCallback } from "react";
 import { scrapeJobs, compareJobs } from "../services/api";
 
+// Custom hook para gestionar el estado y la lógica de las ofertas de empleo
 export function useJobs() {
+    // Estados locales
     const [jobs, setJobs] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-    const [selected, setSelected] = useState([]);
+    const [selected, setSelected] = useState([]); // IDs de ofertas seleccionadas para comparar
     const [meta, setMeta] = useState({ total: 0, sources: [] });
 
+    // Llama al backend para el scraping y ordenamiento de ofertas
     const search = useCallback(async (searchParams, profile) => {
         setLoading(true);
         setError(null);
@@ -22,6 +25,7 @@ export function useJobs() {
         }
     }, []);
 
+    // Selecciona/Deselecciona una oferta de trabajo para comparación (límite de 4 ofertas)
     const toggleSelect = useCallback((jobId) => {
         setSelected((prev) =>
             prev.includes(jobId)
@@ -32,20 +36,25 @@ export function useJobs() {
         );
     }, []);
 
+    // Información detallada de comparación para las ofertas seleccionadas
     const getComparison = useCallback(async () => {
         if (selected.length < 2) return null;
         const result = await compareJobs(selected);
         return result.jobs;
     }, [selected]);
 
+    // Aplica filtros locales sobre la lista de ofertas obtenidas
     const filterJobs = useCallback(
         (filterParams) => {
             const { minScore, modality, source, minSalary } = filterParams || {};
             return jobs.filter((j) => {
-                // If the filter has a value, check against it.
+                // Filtro por puntaje mínimo
                 if (minScore !== undefined && minScore !== null && minScore > 0 && j.score < minScore) return false;
+                // Filtro por modalidad de trabajo
                 if (modality && j.modality !== modality) return false;
+                // Filtro por portal de origen
                 if (source && j.source !== source) return false;
+                // Filtro por salario mínimo
                 if (minSalary && j.salary?.min && j.salary.min < minSalary) return false;
                 return true;
             });

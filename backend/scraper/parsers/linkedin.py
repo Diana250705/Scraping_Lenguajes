@@ -1,3 +1,5 @@
+# Realiza web scraping en el portal LinkedIn usando su API de búsqueda pública (guest).
+
 import time
 import requests
 from bs4 import BeautifulSoup
@@ -7,9 +9,11 @@ from backend.scraper.cleaner import clean_text, normalize_modality
 LINKEDIN_SEARCH = "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search"
 
 
+# Realiza peticiones paginadas a LinkedIn y devuelve la lista de ofertas
 def scrape(query: str, location: str = "Peru", max_pages: int = 2) -> list[dict]:
     jobs = []
 
+    # LinkedIn pagina usando un desplazamiento de 25 en 25
     for start in range(0, max_pages * 25, 25):
         params = {
             "keywords": query,
@@ -19,12 +23,14 @@ def scrape(query: str, location: str = "Peru", max_pages: int = 2) -> list[dict]
         }
 
         try:
+            # Petición HTTP agregando cabecera Referer para evitar bloqueos inmediatos
             response = requests.get(
                 LINKEDIN_SEARCH,
                 params=params,
                 headers={**HEADERS, "Referer": "https://www.linkedin.com/jobs/"},
                 timeout=REQUEST_TIMEOUT,
             )
+            # Manejo preventivo si se alcanza el límite de solicitudes por IP
             if response.status_code == 429:
                 print("[LinkedIn] Rate limit alcanzado. Esperando...")
                 time.sleep(10)
@@ -40,6 +46,7 @@ def scrape(query: str, location: str = "Peru", max_pages: int = 2) -> list[dict]
         if not cards:
             break
 
+        # Procesa cada contenedor de oferta de trabajo
         for card in cards:
             job = parse_card(card)
             if job:
@@ -50,6 +57,7 @@ def scrape(query: str, location: str = "Peru", max_pages: int = 2) -> list[dict]
     return jobs
 
 
+# Extrae los datos de un contenedor HTML de oferta de LinkedIn
 def parse_card(card) -> dict | None:
     try:
         title_el = card.find("h3", class_="base-search-card__title")
@@ -63,6 +71,7 @@ def parse_card(card) -> dict | None:
 
         metadata_text = clean_text(metadata_el.get_text()) if metadata_el else ""
 
+        # Retorna la información formateada. LinkedIn Guest no muestra salarios directamente.
         return {
             "id": f"linkedin_{job_id}",
             "source": "LinkedIn",

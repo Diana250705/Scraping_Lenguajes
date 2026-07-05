@@ -1,10 +1,9 @@
-# cleaner.py
 # Normaliza los datos crudos extraídos de cada portal.
 # Cada portal devuelve texto diferente: este módulo los unifica.
 
 import re
 
-
+# Limpia el texto eliminando espacios múltiples y saltos de línea innecesarios
 def clean_text(text: str) -> str:
     if not text:
         return ""
@@ -12,23 +11,24 @@ def clean_text(text: str) -> str:
     return text.strip()
 
 
+# Convierte el texto del salario en un formato estructurado (mínimo, máximo, moneda, periodo)
 def normalize_salary(raw: str) -> dict:
     if not raw or raw.strip() == "":
         return {"min": None, "max": None, "currency": "PEN", "period": None}
 
-    # Clean S/. or S/ prefix
+    # Limpia el prefijo del sol peruano
     raw_clean = raw.replace("S/.", "S/").strip()
 
-    # Find all numeric parts after S/
-    # Matches numbers like 2.800,00 or 2,800.00 or 2800
+    # Busca patrones numéricos después de S/
+    # Coincide con formatos como 2.800,00 o 2,800.00 o 2800
     matches = re.findall(r"S/\s*([\d.,]+)", raw_clean)
 
     parsed_numbers = []
     for val in matches:
-        # If there's a decimal part at the end (,00 or .00), let's strip it
+        # Si termina en .00 o ,00, elimina los decimales
         if val.endswith(",00") or val.endswith(".00"):
             val = val[:-3]
-        # Remove any remaining thousands separators (, or .)
+        # Elimina separadores de miles
         val_clean = val.replace(".", "").replace(",", "")
         try:
             parsed_numbers.append(int(val_clean))
@@ -53,6 +53,7 @@ def normalize_salary(raw: str) -> dict:
     return {"min": None, "max": None, "currency": "PEN", "period": None}
 
 
+# Periodicidad del salario (mensual, anual, por hora, etc.)
 def detect_period(text: str) -> str:
     text = text.lower()
     if "hora" in text:
@@ -66,6 +67,7 @@ def detect_period(text: str) -> str:
     return "mensual"
 
 
+# Modalidad de trabajo (remoto, presencial, híbrido o no especificado)
 def normalize_modality(raw: str) -> str:
     if not raw:
         return "no especificado"
@@ -81,6 +83,7 @@ def normalize_modality(raw: str) -> str:
     return "no especificado"
 
 
+# Años de experiencia requeridos
 def normalize_experience(raw: str) -> int:
     if not raw:
         return 0

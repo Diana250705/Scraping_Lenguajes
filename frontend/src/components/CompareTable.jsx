@@ -1,4 +1,6 @@
+// Componente modal que muestra una tabla comparativa para las ofertas seleccionadas
 export function CompareTable({ jobs, onClose }) {
+    // Definición de los campos a comparar
     const fields = [
         { label: "Fuente", key: "source" },
         { label: "Empresa", key: "company" },
@@ -10,16 +12,19 @@ export function CompareTable({ jobs, onClose }) {
     return (
         <div className="modal-overlay">
             <div className="modal-content">
+                {/* Cabecera del modal con botón de cierre */}
                 <div className="modal-header">
                     <h2 className="modal-title">Comparar ofertas</h2>
                     <button onClick={onClose} className="modal-close-btn">✕</button>
                 </div>
 
+                {/* Contenedor responsivo para la tabla de comparación */}
                 <div className="table-responsive">
                     <table className="compare-table">
                         <thead>
                             <tr>
                                 <th className="compare-field-label">Campo</th>
+                                {/* Genera una columna por cada empleo */}
                                 {jobs.map((job) => (
                                     <th key={job.id}>
                                         {job.title || "Sin título"}
@@ -28,6 +33,7 @@ export function CompareTable({ jobs, onClose }) {
                             </tr>
                         </thead>
                         <tbody>
+                            {/* Renderiza las celdas para cada campo */}
                             {fields.map((field) => (
                                 <tr key={field.key}>
                                     <td className="compare-field-label">
@@ -35,6 +41,7 @@ export function CompareTable({ jobs, onClose }) {
                                     </td>
                                     {jobs.map((job) => (
                                         <td key={job.id}>
+                                            {/* Formato badge con colores para el score */}
                                             {field.key === "score" ? (
                                                 <span style={{
                                                     fontWeight: 700,
@@ -49,6 +56,7 @@ export function CompareTable({ jobs, onClose }) {
                                     ))}
                                 </tr>
                             ))}
+                            {/* Fila adicional con enlaces */}
                             <tr>
                                 <td className="compare-field-label">Enlace</td>
                                 {jobs.map((job) => (

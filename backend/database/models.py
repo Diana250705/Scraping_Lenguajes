@@ -3,14 +3,17 @@ import json
 import os
 from dotenv import load_dotenv
 
+# Carga de variables de entorno (como la URL de la base de datos)
 load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
+# Establece y retorna la conexión con la base de datos PostgreSQL
 def get_connection():
     return psycopg2.connect(DATABASE_URL)
 
 
+# Crea la tabla 'jobs' en la base de datos si aún no existe
 def create_table():
     """Crea la tabla jobs si no existe."""
     conn = get_connection()
@@ -38,6 +41,7 @@ def create_table():
     conn.close()
 
 
+# Inserta o actualiza las ofertas de empleo en la base de datos
 def save_jobs(jobs: list[dict], query: str):
     """Guarda lista de ofertas. Ignora duplicados por ID."""
     conn = get_connection()
@@ -75,6 +79,7 @@ def save_jobs(jobs: list[dict], query: str):
     print(f"[DB] {len(jobs)} ofertas guardadas")
 
 
+# Recupera todas las ofertas de la base de datos ordenadas por puntuación (score)
 def get_all_jobs() -> list[dict]:
     """Retorna todas las ofertas guardadas."""
     conn = get_connection()
