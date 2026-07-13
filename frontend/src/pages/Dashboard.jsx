@@ -53,6 +53,7 @@ export function Dashboard() {
             const { data } = await api.post("/export", {
                 search: { query, location: profile.location, max_pages: 2 },
                 profile,
+                job_ids: filteredJobs.map((j) => j.id),
             });
             setExportMessage(data.message || "Exportado correctamente");
             setExportSuccess(true);

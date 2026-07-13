@@ -1,10 +1,20 @@
 import psycopg2
 import json
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 
 # Carga de variables de entorno (como la URL de la base de datos)
-load_dotenv()
+load_dotenv()  # Carga desde el CWD actual
+
+# Búsqueda robusta si no está cargada
+if not os.getenv("DATABASE_URL"):
+    current_file = Path(__file__).resolve()
+    # Buscar en la carpeta backend/
+    load_dotenv(dotenv_path=current_file.parent.parent / ".env")
+    if not os.getenv("DATABASE_URL"):
+        # Buscar en la raíz del proyecto (jobscraper/)
+        load_dotenv(dotenv_path=current_file.parent.parent.parent / ".env")
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 

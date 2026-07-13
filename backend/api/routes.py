@@ -93,10 +93,17 @@ async def compare_jobs(job_ids: list[str]):
     return {"jobs": selected}
 
 
+# Modelo que agrupa la búsqueda, el perfil y los IDs opcionales para exportar
+class ExportRequest(BaseModel):
+    search: SearchRequest
+    profile: UserProfile
+    job_ids: Optional[list[str]] = None
+
+
 # Endpoint para guardar los resultados del caché en la base de datos
 @router.post("/export")
-async def export_jobs(req: ScrapeRequest):
-    """Crea la tabla si no existe y guarda los jobs del cache."""
+async def export_jobs(req: ExportRequest):
+    """Crea la tabla si no existe y guarda los jobs del cache (filtrando por job_ids si se proveen)."""
     cache_key = f"{req.search.query}_{req.search.location}_{req.search.max_pages}"
 
     # Buscar en todas las keys del cache que contengan el query
@@ -111,10 +118,16 @@ async def export_jobs(req: ScrapeRequest):
         raise HTTPException(404, "No hay resultados para exportar. Haz una búsqueda primero.")
 
     ranked = score_jobs(jobs, req.profile.model_dump())
+    
+    # Si se especificaron IDs, se filtra para exportar y reportar solo esos
+    if req.job_ids is not None:
+        ranked = [j for j in ranked if j["id"] in req.job_ids]
+
     create_table()
     save_jobs(ranked, req.search.query)
 
     return {"message": f"{len(ranked)} ofertas exportadas"}
+
 
 
 # Endpoint para limpiar la memoria caché
